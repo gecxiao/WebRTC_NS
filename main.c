@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <windows.h>
 
 #define DR_MP3_IMPLEMENTATION
 
@@ -20,7 +24,6 @@
 #ifndef MIN
 #define MIN(A, B)        ((A) < (B) ? (A) : (B))
 #endif
-
 
 void wavWrite_int16(char *filename, int16_t *buffer, int sampleRate, uint64_t totalSampleCount, uint32_t channels) {
     drwav_data_format format;
@@ -53,7 +56,7 @@ int16_t *wavRead_int16(const char *filename, uint32_t *sampleRate, uint64_t *sam
         }
         input = (int16_t *) mp3_buf;
         for (int32_t i = 0; i < *sampleCount; ++i) {
-            input[i] = (int16_t) drwav_clamp((mp3_buf[i] * 32768.0f), -32768, 32767);
+            input[i] = (int16_t)drwav_clamp((mp3_buf[i] * 32768.0f), -32768, 32767);
         }
     }
     if (input == NULL) {
@@ -206,22 +209,185 @@ void noise_suppression(char *in_file, char *out_file) {
     }
 }
 
-int main(int argc, char *argv[]) {
-    printf("WebRtc Noise Suppression\n");
-    printf("blog:http://cpuimage.cnblogs.com/\n");
-    if (argc < 2)
-        return -1;
-    char *in_file = argv[1];
+//int main(int argc, char *argv[]) {
+//    //if (argc < 2)
+//    //    return -1;
+//    //char currentPath[200],subPath[200];
+//    //subPath[200];
+//    WIN32_FIND_DATA findFileData;
+//    HANDLE hFind;
+//    char *currentPath = "D:\\test\\";
+//    char base[1000];
+//    char *in_file;
+//    hFind=FindFirstFile(currentPath,&findFileData);
+//    while(TRUE)
+//    {
+//        char *in_file = strcat(currentPath,findFileData.cFileName);
+//        printf("%s",in_file);
+//        char drive[3];
+//        char dir[256];
+//        char fname[256];
+//        char ext[256];
+//        char out_file[1024];
+//        splitpath(in_file, drive, dir, fname, ext);
+//        sprintf(out_file, "%s%s%s_out%s", drive, dir, fname, ext);
+//        noise_suppression(in_file, out_file);
+//        if(!FindNextFile(hFind,&findFileData))
+//        {//find next file or directory
+//            break;
+//        }
+//    }
+//    FindClose(hFind);
+//    // *in_file = "D:\\seg_audio\\148359_seg_01.wav";
+////    char drive[3];
+////    char dir[256];
+////    char fname[256];
+////    char ext[256];
+////    char out_file[1024];
+////    splitpath(in_file, drive, dir, fname, ext);
+////    sprintf(out_file, "%s%s%s_out%s", drive, dir, fname, ext);
+////    noise_suppression(in_file, out_file);
+//
+//   // printf("press any key to exit. \n");
+//    //getchar();
+//
+//    return 0;
+//}
+
+//void loopThrough(char* path,char* findType)
+//{
+//    char currentPath[200],subPath[200];
+//    WIN32_FIND_DATA findFileData;
+//    HANDLE hFind;
+//
+//    sprintf(currentPath,"%s\\%s",path,findType);
+//    //find first file or directory under path
+//    hFind=FindFirstFile(currentPath,&findFileData);
+//
+//    if(hFind==INVALID_HANDLE_VALUE)
+//    {//first file or directory non-exists
+//        printf("INVALID HANDLE!\n");
+//        return;
+//    }
+//    else
+//    {//first file or directory exists
+//        while(TRUE)
+//        {
+//            if(findFileData.dwFileAttributes
+//               & FILE_ATTRIBUTE_DIRECTORY)
+//            {//find directory
+//                if(findFileData.cFileName[0]!='.')
+//                {
+//                    sprintf(subPath,"%s\\%s",path,
+//                            findFileData.cFileName);
+//                    loopThrough(subPath,findType);
+//                }
+//            }
+//            else
+//            {//find file
+//                char in_file[100];
+//                char *dir_n = "D:\\seg_audio_origin\\seg_audio\\";
+//                char *file_n = (char*)(findFileData.cFileName);
+//                strcpy(in_file,dir_n);
+//                strcat(in_file,file_n);
+//                char drive[3];
+//                char dir[256];
+//                char fname[256];
+//                char ext[256];
+//                char out_file[1024];
+//                char *out_dir = "D:\\denoised_audio\\";
+//                strcpy(out_file,out_dir);
+//                splitpath(in_file, drive, dir, fname, ext);
+//                sprintf(out_file, "%s%s%s_out%s", drive, dir, fname, ext);
+//                noise_suppression(in_file, out_file);
+//                memset(in_file,0,100);
+////                printf("filename:%s\\%s\n",path,
+////                       findFileData.cFileName); //print
+//            }
+//
+//            if(!FindNextFile(hFind,&findFileData))
+//            {//find next file or directory
+//                break;
+//            }
+//        }
+//
+//        FindClose(hFind); // close HANDLE
+//    }
+//}
+
+//int main(int argc,char* argv[])
+//{
+//    loopThrough("D:\\seg_audio_origin\\seg_audio","*.*");
+//    getchar();
+//    return 1;
+//}
+int main() {
+//    char missed_audio[] = {"148809_seg_10", "148809_seg_11", "148809_seg_12",
+//                              "148811_seg_01", "148811_seg_02", '148811_seg_03', '148811_seg_04',
+//                              '148811_seg_05', '148811_seg_06', '148811_seg_07', '148811_seg_08',
+//                              '148811_seg_09', '148811_seg_10', '148811_seg_11', '148811_seg_12',
+//                              '148811_seg_13', '148811_seg_14', '148811_seg_15', '148811_seg_16',
+//                              '148811_seg_17', '148811_seg_18', '148811_seg_19', '148811_seg_20',
+//                              '148812_seg_01', '148812_seg_02', '148812_seg_03', '148812_seg_04',
+//                              '148812_seg_05', '148812_seg_06', '148812_seg_07', '148812_seg_08',
+//                              '148812_seg_09', '148812_seg_10', '148812_seg_11', '148812_seg_12',
+//                              '148812_seg_13', '148812_seg_14', '148812_seg_15', '148813_seg_01',
+//                              '148813_seg_02', '148813_seg_03', '148813_seg_04', '148813_seg_05',
+//                              '148813_seg_06', '148813_seg_07', '148813_seg_08', '148813_seg_09',
+//                              '148813_seg_10', '148813_seg_11', '148814_seg_01', '148814_seg_02',
+//                              '148814_seg_03', '148814_seg_04', '148814_seg_05', '148814_seg_06',
+//                              '148814_seg_07', '148814_seg_08', '148814_seg_09', '148814_seg_10',
+//                              '148814_seg_11', '148814_seg_12', '148815_seg_01', '148815_seg_02',
+//                              '148815_seg_03', '148815_seg_04', '148815_seg_05', '148815_seg_06',
+//                              '148815_seg_07', '148815_seg_08', '148815_seg_09', '148815_seg_10',
+//                              '148815_seg_11', '148815_seg_12', '148815_seg_13', '148815_seg_14',
+//                              '148815_seg_15', '148817_seg_01', '148817_seg_02', '148817_seg_03',
+//                              '148817_seg_04', '148817_seg_05', '148817_seg_06', '148817_seg_07',
+//                              '148817_seg_08', '148817_seg_09', '148817_seg_10', '148817_seg_11',
+//                              '148817_seg_12', '148817_seg_13', '148817_seg_14', '148817_seg_15',
+//                              '148817_seg_16', '148817_seg_17', '148817_seg_18', '148819_seg_01',
+//                              '148819_seg_02', '148819_seg_03', '148819_seg_04', '148819_seg_05',
+//                              '148819_seg_06', '148819_seg_07', '148819_seg_08', '148819_seg_09',
+//                              '148819_seg_10', '148819_seg_11', '148819_seg_12', '148820_seg_01',
+//                              '148820_seg_02', '148820_seg_03', '148820_seg_04', '148820_seg_05',
+//                              '148820_seg_06', '148820_seg_07', '148820_seg_08', '148820_seg_09',
+//                              '148820_seg_10', '148820_seg_11', '148820_seg_12', '148820_seg_13',
+//                              '148820_seg_14', '148822_seg_01', '148822_seg_02', '148822_seg_03',
+//                              '148822_seg_04', '148822_seg_05', '148822_seg_06', '148822_seg_07',
+//                              '148822_seg_08', '148822_seg_09', '148822_seg_10', '148822_seg_11',
+//                              '148822_seg_12', '148822_seg_13', '148823_seg_01', '148823_seg_02',
+//                              '148823_seg_03', '148823_seg_04', '148823_seg_05', '148823_seg_06',
+//                              '148823_seg_07', '148823_seg_08', '148823_seg_09', '148823_seg_10',
+//                              '148823_seg_11', '148823_seg_12', '148827_seg_01', '148827_seg_02',
+//                              '148827_seg_03', '148827_seg_04', '148827_seg_05', '148827_seg_06',
+//                              '148827_seg_07', '148827_seg_08', '148827_seg_09', '148827_seg_10',
+//                              '148827_seg_11', '148827_seg_12', '148827_seg_13', '148827_seg_14',
+//                              '148828_seg_01', '148828_seg_02', '148828_seg_03', '148828_seg_04',
+//                              '148828_seg_05', '148828_seg_06', '148828_seg_07', '148828_seg_08',
+//                              '148828_seg_09', '148828_seg_10', '148828_seg_11', '148828_seg_12',
+//                              '148828_seg_13', '148828_seg_14', '148828_seg_15', '148828_seg_16',
+//                              '148828_seg_17', '148829_seg_01', '148829_seg_02', '148829_seg_03',
+//                              '148829_seg_04', '148829_seg_05', '148829_seg_06', '148829_seg_07',
+//                              '148829_seg_08', '148829_seg_09', '148829_seg_10', '148829_seg_11',
+//                              '148829_seg_12', '148830_seg_01', '148830_seg_02', '148830_seg_03',
+//                              '148830_seg_04', '148830_seg_05', '148830_seg_06', '148830_seg_07',
+//                              '148830_seg_08'}
+    // char in_file[100] = "D:\\seg_audio_origin\\seg_audio\\148809_seg_10.wav";
+    char in_file[100]="D:\\denoise_2\\seg_audio\\148830_seg_08.wav";
+//char *dir_n = "D:\\seg_audio_origin\\seg_audio\\";
+//char *file_n = (char*)(findFileData.cFileName);
+//strcpy(in_file,dir_n);
+//strcat(in_file,file_n);
     char drive[3];
     char dir[256];
     char fname[256];
     char ext[256];
     char out_file[1024];
+    char *out_dir = "D:\\denoised_2\\";
+    strcpy(out_file, out_dir);
     splitpath(in_file, drive, dir, fname, ext);
     sprintf(out_file, "%s%s%s_out%s", drive, dir, fname, ext);
     noise_suppression(in_file, out_file);
-
-    printf("press any key to exit. \n");
     getchar();
-    return 0;
+    return 1;
 }
